@@ -5,7 +5,7 @@ import multer from 'multer';
 import nodemailer from 'nodemailer';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import connectDB from './Database/config.js'; 
 import Template from './Models/Template.js'; 
