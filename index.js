@@ -1,4 +1,3 @@
-// Import necessary modules and configurations
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -6,8 +5,13 @@ import multer from 'multer';
 import nodemailer from 'nodemailer';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import connectDB from './Database/config.js'; // Adjust path as necessary
-import Template from './models/Template.js'; // Assuming you have a Template model defined
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import connectDB from './Database/config.js'; 
+import Template from './Models/Template.js'; 
+import User from './Models/User.js'; 
+import emailRouter from './Routers/emailRouter.js'; 
+import fs from 'fs';
 
 dotenv.config();
 
@@ -20,6 +24,7 @@ const __dirname = dirname(__filename);
 app.use(express.json());
 app.use(cors());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api', emailRouter); 
 
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
@@ -33,7 +38,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Connect to MongoDB
-connectDB(); // Ensure this function connects to your MongoDB instance
+connectDB(); 
 
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
@@ -45,12 +50,13 @@ const transporter = nodemailer.createTransport({
 });
 
 // Function to send email
-const sendEmail = async (email, subject, htmlContent) => {
+const sendEmail = async (email, subject, htmlContent, attachmentPath) => {
   const mailOptions = {
     from: process.env.EMAIL,
     to: email,
     subject: subject,
     html: htmlContent,
+    attachments: attachmentPath ? [{ path: attachmentPath }] : [],
   };
 
   try {
@@ -62,6 +68,64 @@ const sendEmail = async (email, subject, htmlContent) => {
     throw new Error(`Failed to send email to ${email}`);
   }
 };
+
+// Signup route
+app.post('/api/auth/signup', async (req, res) => {
+  const { username, email, password } = req.body;
+
+  try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+    });
+
+    // Save user to database
+    await newUser.save();
+
+    res.status(201).json({ message: 'User signed up successfully' });
+  } catch (error) {
+    console.error('Error during signup:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Signin route
+app.post('/api/auth/signin', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid email or password' });
+    }
+
+    // Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid email or password' });
+    }
+
+    // Generate JWT
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(200).json({ message: 'User signed in successfully', token });
+  } catch (error) {
+    console.error('Error during signin:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 // Endpoint to save email template
 app.post('/api/templates', async (req, res) => {
@@ -94,7 +158,7 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
 
   // Include file link if uploaded
   if (req.file) {
-    const fileUrl = `http://localhost:8000/uploads/${req.file.filename}`;
+    const fileUrl = `http://localhost:${process.env.PORT}/uploads/${req.file.filename}`;
     htmlContent += `<p>Here is an uploaded file: <a href="${fileUrl}">${req.file.originalname}</a></p>`;
   }
 
@@ -106,7 +170,7 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
 
   try {
     // Send email using defined function
-    await sendEmail(email, subject, htmlContent);
+    await sendEmail(email, subject, htmlContent, req.file ? req.file.path : null);
     res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {
     // Handle email sending errors
@@ -116,11 +180,15 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
 
 // Endpoint to handle file uploads
 app.post('/upload', upload.single('file'), (req, res) => {
-  res.status(200).json({ message: 'File uploaded successfully', file: req.file });
+  const filePath = path.join(__dirname, req.file.path);
+  const fileContent = fs.readFileSync(filePath, 'utf8');
+  const emailIds = fileContent.split(/\r?\n/).filter(email => email);
+
+  res.json({ emailIds });
 });
 
 // Define port for the server to listen on
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`App is listening on port ${PORT}`);
 });

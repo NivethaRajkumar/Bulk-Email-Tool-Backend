@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Sender</title>
+</head>
+<body>
+    <h1>Send Emails to Multiple Recipients</h1>
+    <form id="emailForm" enctype="multipart/form-data">
+        <div>
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" name="subject" required>
+        </div>
+        <div>
+            <label for="message">Message:</label>
+            <textarea id="message" name="message" required></textarea>
+        </div>
+        <div>
+            <label for="imageUrl">Image URL:</label>
+            <input type="text" id="imageUrl" name="imageUrl">
+        </div>
+        <div>
+            <label for="linkUrl">Link URL:</label>
+            <input type="text" id="linkUrl" name="linkUrl">
+        </div>
+        <div>
+            <label for="file">Upload File with Email IDs:</label>
+            <input type="file" id="file" name="file" accept=".txt" required>
+        </div>
+        <div>
+            <label for="attachments">Upload Attachments:</label>
+            <input type="file" id="attachments" name="attachments" multiple>
+        </div>
+        <button type="submit">Send Emails</button>
+    </form>
+
+    <script>
+        document.getElementById('emailForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            try {
+                const response = await fetch('/send-email-multiple', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                console.error('Error sending emails:', error);
+                alert('Error sending emails');
+            }
+        });
+    </script>
+</body>
+</html>
