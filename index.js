@@ -22,7 +22,10 @@ const __dirname = dirname(__filename);
 
 // Middleware setup
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://massmessagetransmitter.netlify.app'],
+  credentials: true,
+}));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', emailRouter); 
 
