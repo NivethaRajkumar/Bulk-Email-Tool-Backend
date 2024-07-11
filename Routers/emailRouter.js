@@ -48,7 +48,6 @@ const sendEmail = async (email, subject, message, imageUrl, linkUrl) => {
   // Implement single email sending logic here
   // Example using nodemailer:
   // Configure your nodemailer transporter outside of this file and import it here
-  /*
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -65,7 +64,7 @@ const sendEmail = async (email, subject, message, imageUrl, linkUrl) => {
   };
 
   await transporter.sendMail(mailOptions);
-  */
+  
   console.log(`Email sent to: ${email}`);
 };
 
