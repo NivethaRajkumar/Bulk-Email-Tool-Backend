@@ -13,6 +13,7 @@ import User from './Models/User.js';
 import emailRouter from './Routers/emailRouter.js';
 import templateRouter from './Routers/templateRouter.js'; 
 import fs from 'fs';
+import axios from 'axios'; // Added Axios import
 
 dotenv.config();
 
@@ -185,7 +186,30 @@ app.post('/upload', upload.single('file'), (req, res) => {
   res.json({ emailIds });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`App is listening on port ${PORT}`);
 });
+
+// Example function handling form submission
+const handleFormSubmit = async (formData) => {
+  try {
+    const response = await axios.post('http://localhost:8000/send-email', formData);
+    console.log('Email sent successfully:', response.data);
+    // Optionally, you can handle success actions here (e.g., show a success message)
+  } catch (error) {
+    console.error('Error sending email:', error);
+    // Optionally, you can handle error actions here (e.g., show an error message)
+  }
+};
+
+// Example usage when submitting a form
+const formData = {
+  email: 'recipient@example.com',
+  subject: 'Your Subject',
+  message: 'Your message content',
+  // Add other relevant fields like imageUrl, linkUrl, etc.
+};
+
+// Assuming this is triggered by a form submission event
+handleFormSubmit(formData);
