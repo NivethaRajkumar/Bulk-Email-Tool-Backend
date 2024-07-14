@@ -24,6 +24,8 @@ const __dirname = dirname(__filename);
 app.use(express.json());
 app.use(cors({
   origin: ['http://localhost:3000', 'https://massmessagetransmitter.netlify.app'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -161,7 +163,7 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
 
   // Include file link if uploaded
   if (req.file) {
-    const fileUrl = `http://localhost:${process.env.PORT}/uploads/${req.file.filename}`;
+    const fileUrl = `https://bulk-email-tool-backend-1-qe7h.onrender.com/uploads/${req.file.filename}`;
     htmlContent += `<p>Here is an uploaded file: <a href="${fileUrl}">${req.file.originalname}</a></p>`;
   }
 
@@ -191,7 +193,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
 });
 
 // Define port for the server to listen on
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`App is listening on port ${PORT}`);
 });
