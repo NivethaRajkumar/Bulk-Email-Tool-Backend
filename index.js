@@ -17,7 +17,7 @@ const __dirname = dirname(__filename);
 
 app.use(express.json());
 app.use(cors({
-  origin: ['http://localhost:3000'], // Update with your frontend URL
+  origin: 'https://massmessagetransmitter.netlify.app', // Update with your frontend URL
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
 }));
