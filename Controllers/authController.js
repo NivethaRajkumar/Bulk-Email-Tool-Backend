@@ -1,54 +1,66 @@
-import User from '../Models/User.js';
+// controllers/authController.js
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import User from '../Models/User.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export const signup = async (req, res) => {
-    const { name, email, password } = req.body;
+  const { username, email, password } = req.body;
 
-    try {
-        let user = await User.findOne({ email });
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: 'Please fill all the fields' });
+  }
 
-        if (user) {
-            return res.status(400).json({ msg: 'User already exists' });
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        user = new User({
-            name,
-            email,
-            password: hashedPassword,
-        });
-
-        await user.save();
-        res.status(201).json({ msg: 'User registered successfully' });
-    } catch (err) {
-        console.error("Error in signup:", err.message);
-        res.status(500).send('Server error');
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+    });
+
+    await newUser.save();
+
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(201).json({ token, message: 'Signup successful' });
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({ message: 'Signup failed', error: error.message });
+  }
 };
 
-export const signin = async(req,res)=>{
-    const { email, password }=req.body;
+export const signin = async (req, res) => {
+  const { email, password } = req.body;
 
-    try {
-        //Check User
-        const user=await User.findOne({email});
-        if(!user){
-            return res.status(404).json({message:'User not found'})
-        }
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Please fill all the fields' });
+  }
 
-        //Check password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if(!isMatch){
-            return res.status(400).json({Message:"Invalid credentials"})
-        }
-
-        //JWT
-        const token=jwt.sign({id:user._id},process.env.JWT_SECRET, {ExpiresIn:'1hr'})
-        res.status(200).json({token, userId:user._id,userName:user.name})
-        
-    } catch (error) {
-        res.status(500).json({message:"Server error"})
+  try {
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
+      return res.status(400).json({ message: 'User does not exist' });
     }
-}
+
+    const isPasswordValid = await bcrypt.compare(password, existingUser.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Invalid password' });
+    }
+
+    const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(200).json({ token, message: 'Signin successful' });
+  } catch (error) {
+    console.error('Signin error:', error);
+    res.status(500).json({ message: 'Signin failed', error: error.message });
+  }
+};

@@ -8,6 +8,7 @@ import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import xlsx from 'xlsx';
+import authRoutes from './routes/authRoutes.js';  // Import the auth routes
 
 dotenv.config();
 
@@ -17,13 +18,16 @@ const __dirname = dirname(__filename);
 
 app.use(express.json());
 app.use(cors({
-  origin: 'https://massmessagetransmitter.netlify.app', // Update with your frontend URL
+  origin: ['https://massmessagetransmitter.netlify.app'], // Update with your frontend URL
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
 }));
 
-//mongodb connection
+// MongoDB connection
 connectDB();
+
+// Use auth routes
+app.use('/api/auth', authRoutes);
 
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
@@ -71,14 +75,12 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
 
   let htmlContent = `<p>${message}</p>`;
 
-  // If file is uploaded and it's an Excel file
   if (req.file && req.file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
     const workbook = xlsx.readFile(req.file.path);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const emailIds = xlsx.utils.sheet_to_json(worksheet, { header: 1 }).flat();
 
-    // Send email to each email ID in the Excel file
     for (const emailId of emailIds) {
       try {
         await sendEmail(emailId, subject, htmlContent, req.file.path, imageUrl, linkUrl);
@@ -89,7 +91,6 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
     }
     res.status(200).json({ message: 'Emails sent successfully' });
   } else {
-    // Otherwise, send to a single email address
     try {
       await sendEmail(email, subject, htmlContent, req.file ? req.file.path : null, imageUrl, linkUrl);
       res.status(200).json({ message: 'Email sent successfully' });
@@ -99,7 +100,6 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
     }
   }
 
-  // Clean up: delete the uploaded file after processing
   if (req.file) {
     fs.unlinkSync(req.file.path);
   }
