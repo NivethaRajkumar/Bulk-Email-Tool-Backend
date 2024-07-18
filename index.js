@@ -8,7 +8,7 @@ import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import xlsx from 'xlsx';
-import authRoutes from './routes/authRoutes.js';  // Import the auth routes
+import authRoutes from './Routers/authRouter.js'; 
 
 dotenv.config();
 
