@@ -26,7 +26,6 @@ router.post('/send-email', upload.single('file'), async (req, res) => {
           res.json({ message: 'Emails sent successfully' });
         });
     } else {
-      // Send email to a single recipient
       await sendEmail(email, subject, message, imageUrl, linkUrl);
       res.json({ message: 'Email sent successfully' });
     }
@@ -37,8 +36,7 @@ router.post('/send-email', upload.single('file'), async (req, res) => {
 });
 
 const sendEmails = async (emailList, subject, message, imageUrl, linkUrl) => {
-  // Implement email sending logic here
-  // Example:
+  
   for (let email of emailList) {
     await sendEmail(email, subject, message, imageUrl, linkUrl);
   }
