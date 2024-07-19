@@ -18,10 +18,11 @@ const __dirname = dirname(__filename);
 
 app.use(express.json());
 app.use(cors({
-  origin: ['https://massmessagetransmitter.netlify.app'], 
+  origin: ['http://localhost:3000', 'https://massmessagetransmitter.netlify.app'], 
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
 }));
+
 
 // MongoDB connection
 connectDB();
