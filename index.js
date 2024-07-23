@@ -23,7 +23,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type'],
 }));
 
-
 // MongoDB connection
 connectDB();
 
