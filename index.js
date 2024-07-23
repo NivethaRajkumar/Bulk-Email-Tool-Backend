@@ -72,7 +72,9 @@ const sendEmail = async (email, subject, htmlContent, attachmentPath, imageUrl, 
 
 // Route to handle sending emails
 app.post('/send-email', upload.single('file'), async (req, res) => {
+  console.log('Request received at /send-email');
   const { email, subject, message, imageUrl, linkUrl } = req.body;
+  console.log('Request body:', req.body);
 
   let htmlContent = `<p>${message}</p>`;
 
