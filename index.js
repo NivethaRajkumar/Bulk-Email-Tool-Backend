@@ -1,35 +1,25 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import connectDB from './Database/config.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
-import path, { dirname } from 'path';
-import { fileURLToPath } from 'url';
+import path from 'path';
 import fs from 'fs';
 import xlsx from 'xlsx';
-import authRoutes from './Routers/authRouter.js'; 
 
 dotenv.config();
 
 const app = express();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const port = process.env.PORT || 8000;
 
 app.use(express.json());
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://massmessagetransmitter.netlify.app'], 
+  origin: ['http://localhost:3000', 'https://massmessagetransmitter.netlify.app'],
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type'],
 }));
 
-// MongoDB connection
-connectDB();
-
-// Use auth routes
-app.use('/api/auth', authRoutes);
-
-// Multer configuration for file uploads
+// Multer configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -40,7 +30,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Nodemailer transporter setup
+// Nodemailer setup
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -69,12 +59,9 @@ const sendEmail = async (email, subject, htmlContent, attachmentPath, imageUrl, 
   }
 };
 
-// Route to handle sending emails
+// POST route to handle sending emails
 app.post('/send-email', upload.single('file'), async (req, res) => {
-  console.log('Request received at /send-email');
   const { email, subject, message, imageUrl, linkUrl } = req.body;
-  console.log('Request body:', req.body);
-
   let htmlContent = `<p>${message}</p>`;
 
   if (req.file && req.file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
@@ -107,7 +94,6 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
