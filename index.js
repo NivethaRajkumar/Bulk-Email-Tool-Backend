@@ -29,7 +29,6 @@ app.use('/api/auth', authRoutes);
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Ensure the uploads directory exists
     if (!fs.existsSync('uploads')) {
       fs.mkdirSync('uploads');
     }
