@@ -8,7 +8,7 @@ import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import xlsx from 'xlsx';
-import authRoutes from './Routers/authRouter.js'; 
+import authRoutes from './Routers/authRouter.js';
 
 dotenv.config();
 
@@ -82,22 +82,38 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
       const worksheet = workbook.Sheets[sheetName];
       const emailIds = xlsx.utils.sheet_to_json(worksheet, { header: 1 }).flat();
 
+      console.log("Extracted email IDs:", emailIds);
+
+      let invalidEmails = false;
       for (const emailId of emailIds) {
-        await sendEmail(emailId, subject, htmlContent, req.file.path, imageUrl, linkUrl);
-        console.log(`Email sent to: ${emailId}`);
+        if (emailId && typeof emailId === 'string' && emailId.includes('@')) {
+          await sendEmail(emailId, subject, htmlContent, req.file.path, imageUrl, linkUrl);
+          console.log(`Email sent to: ${emailId}`);
+        } else {
+          console.log(`Invalid email ID: ${emailId}`);
+          invalidEmails = true;
+        }
       }
-      res.status(200).json({ message: 'Emails sent successfully' });
-    } else {
+
+      if (invalidEmails) {
+        res.status(400).json({ message: 'Some email IDs were invalid' });
+      } else {
+        res.status(200).json({ message: 'Emails sent successfully' });
+      }
+    } else if (email && typeof email === 'string' && email.includes('@')) {
       await sendEmail(email, subject, htmlContent, req.file ? req.file.path : null, imageUrl, linkUrl);
       res.status(200).json({ message: 'Email sent successfully' });
-    }
-
-    if (req.file) {
-      fs.unlinkSync(req.file.path);
+    } else {
+      console.log('Invalid email address provided.');
+      res.status(400).json({ message: 'Invalid email address provided' });
     }
   } catch (error) {
     console.error('Error in /send-email route:', error);
     res.status(500).json({ message: 'Failed to send email' });
+  } finally {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
   }
 });
 
